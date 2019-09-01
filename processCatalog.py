@@ -158,6 +158,8 @@ def updateSpotify(config, catalog):
                 except:
                     print("Failed: {}".format(query))    
         
+        # Add a bonus track. ;-)
+        track_ids.append("1yYzqYzzXtAKxtUIIXmYgp")
         print('Pushing {} tracks'.format(len(track_ids)))
 
         sp.user_playlist_replace_tracks(username, pl_id, track_ids[0:100])
