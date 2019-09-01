@@ -147,12 +147,12 @@ def updateSpotify(config, catalog):
                 except:
                     print("Failed: {}".format(query))    
         
+        print('Pushing {} tracks'.format(min(100,len(track_ids))))
+        
 
-        print(json.dumps(track_ids))
-
-        sp.user_playlist_replace_tracks(username, pl_id, track_ids)
-        playlist_description ='Top 25 artists on KEXP as of {}'.format(datetime.datetime.now().strftime('%x'))
-        #sp.user_playlist_change_details(username, pl_id, playlist_description)
+        sp.user_playlist_replace_tracks(username, pl_id, track_ids[0:100])
+        playlist_description ='Top 25 artists on KEXP, {} days ending {}'.format(config['daysToParse'], datetime.datetime.utcnow().strftime('%x'))
+        sp.user_playlist_change_details(username, pl_id, description= playlist_description)
     else:
         print("Can't get token for", username)
 
