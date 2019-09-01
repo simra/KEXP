@@ -9,6 +9,8 @@ The redirect URI doesn't have to be functional but you will need to copy it from
 
 I manually created an empty playlist in Spotify called "KEXP Weekly". It can also be done programmatically but this was most straightforward.
 
+Public link to my version of the playlist: https://open.spotify.com/playlist/09yfdQAMb5FUeHTwYR0Ruc?si=4062lbLVQpGPVckqLXDe7g
+
 ## Methodology
 Daily KEXP playlists are cached to avoid over-querying. We're hitting the endpoint that serves the main kexp.org web page.  BE POLITE!
 
