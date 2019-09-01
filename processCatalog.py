@@ -148,7 +148,6 @@ def updateSpotify(config, catalog):
                     print("Failed: {}".format(query))    
         
         print('Pushing {} tracks'.format(min(100,len(track_ids))))
-        
 
         sp.user_playlist_replace_tracks(username, pl_id, track_ids[0:100])
         playlist_description ='Top 25 artists on KEXP, {} days ending {}'.format(config['daysToParse'], datetime.datetime.utcnow().strftime('%x'))
