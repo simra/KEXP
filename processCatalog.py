@@ -8,6 +8,7 @@ import subprocess
 import spotipy
 import spotipy.util as util
 import datetime
+import time
 import requests
 
 # Sample config:
@@ -33,31 +34,41 @@ def formatDate(date):
     return date.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 def makeUrl(startdate, enddate):
-    return '{}/play?start_time={}&end_time={}'.format(
+    print(startdate,enddate)
+    return '{}/play?begin_time={}&end_time={}&ordering=airdate'.format(
         'https://legacy-api.kexp.org',
         formatDate(startdate), formatDate(enddate))
 
 def fetchDate(start, end):
+    # TODO: this is currently only capturing the first 100 tracks of the day.
     cacheFn = 'cache/{}.json'.format(start.strftime("%Y%m%d"))
-    if not os.path.exists(cacheFn):        
-        nextUrl = makeUrl(start, end)
+    print("Fetching {}".format(start.strftime("%Y-%m-%d")))                        
+    
+    if not os.path.exists(cacheFn): 
         cachetracks=[]
-        print("Fetching {}".format(start.strftime("%Y-%m-%d")))            
-        while nextUrl is not None:
-            print('\t'+nextUrl.replace('https://legacy-api.kexp.org',''))
-            result=requests.get(nextUrl)
-            if result.ok:
-                response = result.json()
-                nextUrl = response['next']
-                tracks = response['results']
-                print(len(tracks))
-                for t in tracks:
-                    #print(json.dumps(t))
-                    if 'track' in t:
-                        cachetracks.append(t)
-            else:
-                print(json.dumps(result))
-                nextUrl=None
+        while (start<end):       
+            nextUrl = makeUrl(start, start+datetime.timedelta(hours=1))
+            while nextUrl is not None:
+                print('\t'+nextUrl.replace('https://legacy-api.kexp.org',''))
+                result=requests.get(nextUrl)
+                if result.ok:
+                    response = result.json()
+                    tracks = response['results']
+                    nextUrl = response['next'] if len(tracks)>0 else None
+                    print(len(tracks))
+                    for t in tracks:
+                        #print(json.dumps(t))
+                        if 'track' in t:
+                            cachetracks.append(t)
+                            #print(t['airdate'])
+                else:
+                    print(json.dumps(result))
+                    nextUrl=None
+            start=start+datetime.timedelta(hours=1)
+            time.sleep(1)
+            #print(formatDate(start))
+            #exit()
+
         with open(cacheFn,'w', encoding='utf-8') as outCache:
             outCache.write(json.dumps(cachetracks))
     tracks=[]
@@ -72,7 +83,7 @@ def fetchDate(start, end):
 def collectFromKEXP(config):
     daysToParse= config['daysToParse'] if 'daysToParse' in config else 7
 
-    today = datetime.datetime.utcnow().date()
+    today = datetime.datetime.fromordinal(datetime.datetime.utcnow().date().toordinal())
     start_date = today - datetime.timedelta(days=daysToParse)
     end_date = start_date + datetime.timedelta(days=1)
     results = []
@@ -147,9 +158,11 @@ def updateSpotify(config, catalog):
                 except:
                     print("Failed: {}".format(query))    
         
-        print('Pushing {} tracks'.format(min(100,len(track_ids))))
+        print('Pushing {} tracks'.format(len(track_ids)))
 
         sp.user_playlist_replace_tracks(username, pl_id, track_ids[0:100])
+        if len(track_ids)>100:
+            sp.user_playlist_add_tracks(username, pl_id, track_ids[100:])
         playlist_description ='Top 25 artists on KEXP, {} days ending {}'.format(config['daysToParse'], datetime.datetime.utcnow().strftime('%x'))
         sp.user_playlist_change_details(username, pl_id, description= playlist_description)
     else:
