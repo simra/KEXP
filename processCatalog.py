@@ -10,6 +10,7 @@ import spotipy.util as util
 import datetime
 import time
 import requests
+import re
 
 # Sample config:
 # Visit https://developer.spotify.com/dashboard/applications to create a clientid.
@@ -139,7 +140,8 @@ def updateSpotify(config, catalog):
         for r in sorted(result, key=lambda x: len(result[x]['plays']), reverse=True)[0:25]:
             print(r,len(result[r]['plays']))
             for s in result[r]['songs']:
-                print('\t{}'.format(s))            
+                print('\t{}'.format(s))
+                s=re.sub(r'\(feat. .*\)', '', s).strip()
                 query = "artist:{} track:{}".format(r,s)
                 try:
                     searchResult=sp.search(query)
@@ -148,11 +150,15 @@ def updateSpotify(config, catalog):
                         track_ids.append(searchResult['tracks']['items'][0]['id'])
                     else:
                         print("No search result for {}".format(query))
-                        # try a keyword search instead
+                        # try a keyword search instead                        
                         query= "{} {}".format(r,s)
                         searchResult=sp.search(query)
                         if (len(searchResult['tracks']['items'])>0):
-                            track_ids.append(searchResult['tracks']['items'][0]['id'])
+                            track = searchResult['tracks']['items'][0]['id']
+                            if track not in track_ids:
+                                track_ids.append(searchResult['tracks']['items'][0]['id'])
+                            else:
+                                print("skipping duplicate item for {}".format(query))
                         else:
                             print("No fallback result either.")
                 except:
