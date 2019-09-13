@@ -144,10 +144,14 @@ def updateSpotify(config, catalog):
                 s=re.sub(r'\(feat. .*\)', '', s).strip()
                 query = "artist:{} track:{}".format(r,s)
                 try:
-                    searchResult=sp.search(query)
-                    if (len(searchResult['tracks']['items'])>0):
-                        #pprint.pprint(searchResult['tracks']['items'][0])
-                        track_ids.append(searchResult['tracks']['items'][0]['id'])
+                    searchResult=sp.search(query)                    
+                    if len(searchResult['tracks']['items'])>0:
+                        track = searchResult['tracks']['items'][0]['id']
+                        if track not in track_ids:
+                            #pprint.pprint(searchResult['tracks']['items'][0])
+                            track_ids.append(track)
+                        else:
+                            print("skipping duplicate item for {}".format(query))
                     else:
                         print("No search result for {}".format(query))
                         # try a keyword search instead                        
@@ -156,7 +160,7 @@ def updateSpotify(config, catalog):
                         if (len(searchResult['tracks']['items'])>0):
                             track = searchResult['tracks']['items'][0]['id']
                             if track not in track_ids:
-                                track_ids.append(searchResult['tracks']['items'][0]['id'])
+                                track_ids.append(track)
                             else:
                                 print("skipping duplicate item for {}".format(query))
                         else:
