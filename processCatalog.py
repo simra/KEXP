@@ -172,9 +172,13 @@ def updateSpotify(config, catalog):
         track_ids.append("1yYzqYzzXtAKxtUIIXmYgp")
         print('Pushing {} tracks'.format(len(track_ids)))
 
+        sp.user_playlist_replace_tracks(username, pl_id, track_ids[0:100])
+        track_ids=track_ids[100:]            
+        
         while len(track_ids)>0:
-            sp.user_playlist_replace_tracks(username, pl_id, track_ids[0:100])
+            sp.user_playlist_add_tracks(username, pl_id, track_ids[0:100])
             track_ids=track_ids[100:]            
+            
         playlist_description ='Top 25 artists on KEXP, {} days ending {}'.format(config['daysToParse'], datetime.datetime.utcnow().strftime('%x'))
         sp.user_playlist_change_details(username, pl_id, description= playlist_description)
     else:
