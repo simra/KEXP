@@ -63,7 +63,12 @@ def fetchDate(start, end):
                             cachetracks.append(t)
                             #print(t['airdate'])
                 else:
-                    print(json.dumps(result))
+                    try:
+                        result.raise_for_status()
+                    except requests.exceptions.HTTPError as err:
+                        print(err)
+                        sys.exit(1)
+                    #print(json.dumps(result))
                     nextUrl=None
             start=start+datetime.timedelta(hours=1)
             time.sleep(1)
