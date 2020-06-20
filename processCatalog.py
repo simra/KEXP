@@ -115,7 +115,6 @@ def updateSpotify(config, catalog):
         result[artistid]['plays'].add(r['airdate']) # count by unique timestamps. Sometimes the playlist has duplicates.
         result[artistid]['songs'].add(r['track']['name'])
     
-    print(len(result['Portishead']['plays']))
     username = config['spotify_username']
     playlist_name= config['playlist_name']
     
