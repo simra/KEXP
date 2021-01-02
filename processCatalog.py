@@ -11,6 +11,7 @@ import datetime
 import time
 import requests
 import re
+import argparse
 
 # Sample config:
 # Visit https://developer.spotify.com/dashboard/applications to create a clientid.
@@ -106,14 +107,18 @@ def updateSpotify(config, catalog):
 
     # we rank artists by most plays, take the top 25 and 
     # add their played tracks to the playlist.
+    pivot = config['pivot'] if 'pivot' in config else 'artist'
+    print(f'Grouping by {pivot}')
     for r in catalog:
         if r['track'] is None:
             continue
-        artistid = r['artist']['name']
+        artistid = r[pivot]['name']
+        if pivot == 'track':
+            artistid += '; '+r['artist']['name']
         if artistid not in result:
             result[artistid]={'track':r, 'plays':set(), 'songs':set()}
         result[artistid]['plays'].add(r['airdate']) # count by unique timestamps. Sometimes the playlist has duplicates.
-        result[artistid]['songs'].add(r['track']['name'])
+        result[artistid]['songs'].add((r['artist']['name'],r['track']['name']))
     
     username = config['spotify_username']
     playlist_name= config['playlist_name']
@@ -124,13 +129,7 @@ def updateSpotify(config, catalog):
 
     if token:
         sp = spotipy.Spotify(auth=token)
-        #sp.trace = True
-        #sp.trace_out = True
-        #print(dir(sp))
-        # It's better to create this manually.
-        #playlists = sp.user_playlist_create(username, playlist_name, description=playlist_description, public=True)
-        #                                    #playlist_description)    
-        #pprint.pprint(playlists)
+        
         playlists=sp.user_playlists(username)
         
         pl_id=None
@@ -141,12 +140,13 @@ def updateSpotify(config, catalog):
             raise Exception("Can't find playlist {}".format(config['playlist_name']))
 
         track_ids = []
-        for r in sorted(result, key=lambda x: len(result[x]['plays']), reverse=True)[0:25]:
+        topN = config['topN'] if 'topN' in config else 25
+        for r in sorted(result, key=lambda x: len(result[x]['plays']), reverse=True)[0:topN]:
             print(r,len(result[r]['plays']))
-            for s in result[r]['songs']:
-                print('\t{}'.format(s))
+            for a,s in result[r]['songs']:
+                print('\t{}'.format(s))                
                 s=re.sub(r'\(feat. .*\)', '', s).strip()
-                query = "artist:{} track:{}".format(r,s)
+                query = "artist:{} track:{}".format(a,s)
                 try:
                     searchResult=sp.search(query)                    
                     if len(searchResult['tracks']['items'])>0:
@@ -173,7 +173,9 @@ def updateSpotify(config, catalog):
                     print("Failed: {}".format(query))    
         
         # Add a bonus track. ;-)
-        track_ids.append("1yYzqYzzXtAKxtUIIXmYgp")
+        bonus = "1yYzqYzzXtAKxtUIIXmYgp"
+        if bonus not in track_ids:
+            track_ids.append(bonus)
         print('Pushing {} tracks'.format(len(track_ids)))
 
         sp.user_playlist_replace_tracks(username, pl_id, track_ids[0:100])
@@ -188,8 +190,14 @@ def updateSpotify(config, catalog):
     else:
         print("Can't get token for", username)
 
+def parseArgs():
+    parser = argparse.ArgumentParser('Process KEXP playlist and upload to spotify')
+    parser.add_argument('--config', type=str, default='config.json', help='Config file in json format')
+    return parser.parse_args()
+
 def main():
-    with open('config.json', 'r', encoding='utf-8') as inCfg:
+    args=parseArgs()
+    with open(args.config, 'r', encoding='utf-8') as inCfg:
         config=json.load(inCfg)
     
     setEnvironment(config)

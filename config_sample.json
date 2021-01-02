@@ -6,6 +6,8 @@
     },
     "spotify_username": "<your spotify username>",
     "playlist_name": "KEXP Weekly",
-    "daysToParse": 14
+    "daysToParse": 14,
+    "topN": 25,
+    "pivot": "artist"
 }
     
