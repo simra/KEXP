@@ -185,7 +185,7 @@ def updateSpotify(config, catalog):
             sp.user_playlist_add_tracks(username, pl_id, track_ids[0:100])
             track_ids=track_ids[100:]            
             
-        playlist_description ='Top 25 artists on KEXP, {} days ending {}'.format(config['daysToParse'], datetime.datetime.utcnow().strftime('%x'))
+        playlist_description ='Top tracks on KEXP, {} days ending {}'.format(config['daysToParse'], datetime.datetime.utcnow().strftime('%x'))
         sp.user_playlist_change_details(username, pl_id, description= playlist_description)
     else:
         print("Can't get token for", username)
