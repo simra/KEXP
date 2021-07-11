@@ -155,20 +155,26 @@ def updateSpotify(config, catalog):
                             #pprint.pprint(searchResult['tracks']['items'][0])
                             track_ids.append(track)
                         else:
-                            print("skipping duplicate item for {}".format(query))
+                            print("\tskipping duplicate item for {}".format(query))
                     else:
-                        print("No search result for {}".format(query))
-                        # try a keyword search instead                        
-                        query= "{} {}".format(r,s)
+                        print("\tNo search result for {}".format(query))
+                        # try a keyword search instead
+                        a_scrub = a
+                        if 'feat.' in a_scrub.lower():
+                            a_scrub=a_scrub[:a_scrub.lower().index('feat.')]
+                        a_scrub=a_scrub.replace('&', '')
+                        s_scrub = s.replace('&','')                                                
+                        query= "{} {}".format(a_scrub,s_scrub)
                         searchResult=sp.search(query)
                         if (len(searchResult['tracks']['items'])>0):
-                            track = searchResult['tracks']['items'][0]['id']
-                            if track not in track_ids:
-                                track_ids.append(track)
+                            track = searchResult['tracks']['items'][0]
+                            if track['id'] not in track_ids:
+                                print('\tFound track: {} ; {}'.format(track['artists'][0]['name'],track['name']))
+                                track_ids.append(track['id'])
                             else:
-                                print("skipping duplicate item for {}".format(query))
+                                print("\tskipping duplicate item for {}".format(query))
                         else:
-                            print("No fallback result either.")
+                            print("\t** No fallback result either.")
                 except:
                     print("Failed: {}".format(query))    
         
