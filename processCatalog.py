@@ -23,6 +23,13 @@ import argparse
 #
 # }
 
+def uprint(*objects, sep=' ', end='\n', file=sys.stdout):
+    enc = file.encoding
+    if enc == 'UTF-8':
+        print(*objects, sep=sep, end=end, file=file)
+    else:
+        f = lambda obj: str(obj).encode(enc, errors='backslashreplace').decode(enc)
+        print(*map(f, objects), sep=sep, end=end, file=file)
 
 def setEnvironment(config):
     if 'environment' in config:
@@ -35,7 +42,7 @@ def formatDate(date):
 
 
 def makeUrl(startdate, enddate):
-    print(startdate, enddate)
+    uprint(startdate, enddate)
     return '{}/play?begin_time={}&end_time={}&ordering=airdate'.format(
         'https://legacy-api.kexp.org',
         formatDate(startdate), formatDate(enddate))
@@ -44,20 +51,20 @@ def makeUrl(startdate, enddate):
 def fetchDate(start, end):
     # TODO: this is currently only capturing the first 100 tracks of the day.
     cacheFn = 'cache/{}.json'.format(start.strftime("%Y%m%d"))
-    print("Fetching {}".format(start.strftime("%Y-%m-%d")))
+    uprint("Fetching {}".format(start.strftime("%Y-%m-%d")))
 
     if not os.path.exists(cacheFn):
         cachetracks = []
         while (start < end):
             nextUrl = makeUrl(start, start+datetime.timedelta(hours=1))
             while nextUrl is not None:
-                print('\t'+nextUrl.replace('https://legacy-api.kexp.org', ''))
+                uprint('\t'+nextUrl.replace('https://legacy-api.kexp.org', ''))
                 result = requests.get(nextUrl)
                 if result.ok:
                     response = result.json()
                     tracks = response['results']
                     nextUrl = response['next'] if len(tracks) > 0 else None
-                    print(len(tracks))
+                    uprint(len(tracks))
                     for t in tracks:
                         # print(json.dumps(t))
                         if 'track' in t:
@@ -67,7 +74,7 @@ def fetchDate(start, end):
                     try:
                         result.raise_for_status()
                     except requests.exceptions.HTTPError as err:
-                        print(err)
+                        uprint(err)
                         sys.exit(1)
                     # print(json.dumps(result))
                     nextUrl = None
@@ -79,10 +86,10 @@ def fetchDate(start, end):
         with open(cacheFn, 'w', encoding='utf-8') as outCache:
             outCache.write(json.dumps(cachetracks))
     tracks = []
-    print("Loading {}".format(cacheFn))
+    uprint("Loading {}".format(cacheFn))
     with open(cacheFn, 'r', encoding='utf-8') as inCache:
         tracks = json.load(inCache)
-    print(len(tracks))
+    uprint(len(tracks))
     return tracks
 
 
@@ -98,7 +105,7 @@ def collectFromKEXP(config):
         results += fetchDate(start_date, end_date)
         start_date = start_date + datetime.timedelta(days=1)
         end_date = start_date + datetime.timedelta(days=1)
-    print("All results: ", len(results))
+    uprint("All results: ", len(results))
     return results
 
 
@@ -108,9 +115,9 @@ def updateSpotify(config, catalog):
     # we rank artists by most plays, take the top 25 and
     # add their played tracks to the playlist.
     pivot = config['pivot'] if 'pivot' in config else 'artist'
-    print(f'Grouping by {pivot}')
+    uprint(f'Grouping by {pivot}')
     for r in catalog:
-        if r['track'] is None:
+        if r['track'] is None or r['artist'] is None:
             continue
         artistid = r[pivot]['name']
         if pivot == 'track':
@@ -144,9 +151,9 @@ def updateSpotify(config, catalog):
         topN = config['topN'] if 'topN' in config else 25
         for r in sorted(result, key=lambda x: len(result[x]['plays']),
                         reverse=True)[0:topN]:
-            print(r, len(result[r]['plays']))
+            uprint(r, len(result[r]['plays']))
             for a, s in result[r]['songs']:
-                print('\t{}'.format(s))
+                uprint('\t{}'.format(s))
                 s = re.sub(r'\(feat. .*\)', '', s).strip()
                 query = "artist:{} track:{}".format(a, s)
                 try:
@@ -157,10 +164,10 @@ def updateSpotify(config, catalog):
                             # pprint.pprint(searchResult['tracks']['items'][0])
                             track_ids.append(track)
                         else:
-                            print("\tskipping duplicate item for {}".format(
+                            uprint("\tskipping duplicate item for {}".format(
                                 query))
                     else:
-                        print("\tNo search result for {}".format(query))
+                        uprint("\tNo search result for {}".format(query))
                         # try a keyword search instead
                         a_scrub = a
                         if 'feat.' in a_scrub.lower():
@@ -172,23 +179,23 @@ def updateSpotify(config, catalog):
                         if (len(searchResult['tracks']['items']) > 0):
                             track = searchResult['tracks']['items'][0]
                             if track['id'] not in track_ids:
-                                print('\tFound track: {} ; {}'.format(
+                                uprint('\tFound track: {} ; {}'.format(
                                     track['artists'][0]['name'], track['name'])
                                     )
                                 track_ids.append(track['id'])
                             else:
-                                print("\tskipping duplicate item for {}".
+                                uprint("\tskipping duplicate item for {}".
                                       format(query))
                         else:
-                            print("\t** No fallback result either.")
+                            uprint("\t** No fallback result either.")
                 except Exception as e:
-                    print("Failed: {}\n{}".format(query, e))
+                    uprint("Failed: {}\n{}".format(query, e))
 
         # Add a bonus track. ;-)
         bonus = "1yYzqYzzXtAKxtUIIXmYgp"
         if bonus not in track_ids:
             track_ids.append(bonus)
-        print('Pushing {} tracks'.format(len(track_ids)))
+        uprint('Pushing {} tracks'.format(len(track_ids)))
 
         sp.user_playlist_replace_tracks(username, pl_id, track_ids[0:100])
         track_ids = track_ids[100:]
@@ -204,7 +211,7 @@ def updateSpotify(config, catalog):
         sp.user_playlist_change_details(username, pl_id,
                                         description=playlist_description)
     else:
-        print("Can't get token for", username)
+        uprint("Can't get token for", username)
 
 
 def parseArgs():
