@@ -50,6 +50,7 @@ def makeUrl(startdate, enddate):
 
 def fetchDate(start, end):
     # TODO: this is currently only capturing the first 100 tracks of the day.
+    os.makedirs('./cache', exist_ok=True)
     cacheFn = 'cache/{}.json'.format(start.strftime("%Y%m%d"))
     uprint("Fetching {}".format(start.strftime("%Y-%m-%d")))
 
