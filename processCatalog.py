@@ -141,8 +141,9 @@ def updateSpotify(config, catalog):
         playlists = sp.user_playlists(username)
         pl_id = None
         for r in playlists['items']:
-            if r['name'] == playlist_name:
+            if r and r['name'] == playlist_name:
                 pl_id = r['id']
+                break
         if pl_id is None:
             raise Exception("Can't find playlist {}".format(
                 config['playlist_name']))
