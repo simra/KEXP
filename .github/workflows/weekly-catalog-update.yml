@@ -64,7 +64,7 @@ jobs:
           "scope": "playlist-modify-public playlist-modify-private",
           "expires_at": 0
         }
-        EOF      
+        EOF
     - name: Run KEXP catalog processing
       run: python processCatalog.py --config config.json
       
