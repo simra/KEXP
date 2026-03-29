@@ -50,6 +50,14 @@ jobs:
         }
         EOF
         
+    - name: Restore API cache
+      uses: actions/cache@v4
+      with:
+        path: cache/
+        key: kexp-api-cache-${{ github.run_id }}
+        restore-keys: |
+          kexp-api-cache-
+
     - name: Run KEXP catalog processing
       run: python processCatalog.py --config config.json
       
