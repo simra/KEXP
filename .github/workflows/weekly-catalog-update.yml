@@ -51,16 +51,47 @@ jobs:
         EOF
         
     - name: Restore API cache
-      uses: actions/cache@v4
+      uses: actions/download-artifact@v4
       with:
+        name: kexp-api-cache
         path: cache/
-        key: kexp-api-cache-${{ github.run_id }}
-        restore-keys: |
-          kexp-api-cache-
+      continue-on-error: true # First run will not have an existing artifact
 
     - name: Run KEXP catalog processing
       run: python processCatalog.py --config config.json
-      
+
+    - name: Prune cache files older than retention period
+      env:
+        CACHE_RETENTION_DAYS: ${{ vars.CACHE_RETENTION_DAYS || '90' }}
+      run: |
+        python3 - <<'EOF'
+        import os, datetime
+        retention_days = int(os.environ.get('CACHE_RETENTION_DAYS', 90))
+        cutoff = datetime.datetime.utcnow() - datetime.timedelta(days=retention_days)
+        deleted = 0
+        cache_dir = 'cache'
+        if os.path.isdir(cache_dir):
+            for f in os.listdir(cache_dir):
+                # Cache files are named YYYYMMDD.json by processCatalog.py
+                if f.endswith('.json') and len(f) == 13:
+                    try:
+                        date = datetime.datetime.strptime(f[:8], '%Y%m%d')
+                        if date < cutoff:
+                            os.remove(os.path.join(cache_dir, f))
+                            deleted += 1
+                            print(f'Deleted {f}')
+                    except ValueError:
+                        pass
+        print(f'Pruned {deleted} cache file(s) older than {retention_days} days')
+        EOF
+
+    - name: Upload API cache
+      uses: actions/upload-artifact@v4
+      with:
+        name: kexp-api-cache
+        path: cache/
+        overwrite: true
+
     - name: Clean up config file
       if: always()
       run: rm -f config.json
