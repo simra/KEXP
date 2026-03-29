@@ -49,7 +49,21 @@ jobs:
             "pivot": "${PIVOT:-track}"
         }
         EOF
-        
+    - name: Pre-seed Spotify token cache
+      env:
+        SPOTIFY_USERNAME: ${{ secrets.SPOTIFY_USERNAME }}
+        SPOTIFY_REFRESH_TOKEN: ${{ secrets.SPOTIFY_REFRESH_TOKEN }}
+      run: |
+        cat > ".cache-${SPOTIFY_USERNAME}" << EOF
+        {
+          "access_token": "placeholder",
+          "token_type": "Bearer",
+          "expires_in": 3600,
+          "refresh_token": "${SPOTIFY_REFRESH_TOKEN}",
+          "scope": "playlist-modify-public playlist-modify-private",
+          "expires_at": 0
+        }
+        EOF      
     - name: Run KEXP catalog processing
       run: python processCatalog.py --config config.json
       
