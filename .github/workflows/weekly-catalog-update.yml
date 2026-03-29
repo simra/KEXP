@@ -9,6 +9,7 @@ on:
 jobs:
   update-catalog:
     runs-on: ubuntu-latest
+    environment: "weekly update"
     
     steps:
     - name: Checkout repository
@@ -28,12 +29,12 @@ jobs:
       env:
         SPOTIPY_CLIENT_ID: ${{ secrets.SPOTIPY_CLIENT_ID }}
         SPOTIPY_CLIENT_SECRET: ${{ secrets.SPOTIPY_CLIENT_SECRET }}
-        SPOTIPY_REDIRECT_URI: ${{ secrets.SPOTIPY_REDIRECT_URI }}
-        SPOTIFY_USERNAME: ${{ secrets.SPOTIFY_USERNAME }}
-        PLAYLIST_NAME: ${{ secrets.PLAYLIST_NAME }}
-        DAYS_TO_PARSE: ${{ secrets.DAYS_TO_PARSE }}
-        TOP_N: ${{ secrets.TOP_N }}
-        PIVOT: ${{ secrets.PIVOT }}
+        SPOTIPY_REDIRECT_URI: ${{ vars.SPOTIPY_REDIRECT_URI }}
+        SPOTIFY_USERNAME: ${{ vars.SPOTIFY_USERNAME }}
+        PLAYLIST_NAME: ${{ vars.PLAYLIST_NAME }}
+        DAYS_TO_PARSE: ${{ vars.DAYS_TO_PARSE }}
+        TOP_N: ${{ vars.TOP_N }}
+        PIVOT: ${{ vars.PIVOT }}
       run: |
         cat > config.json << EOF
         {
@@ -49,7 +50,21 @@ jobs:
             "pivot": "${PIVOT:-track}"
         }
         EOF
-        
+    - name: Pre-seed Spotify token cache
+      env:
+        SPOTIFY_USERNAME: ${{ vars.SPOTIFY_USERNAME }}
+        SPOTIFY_REFRESH_TOKEN: ${{ secrets.SPOTIFY_REFRESH_TOKEN }}
+      run: |
+        cat > ".cache-${SPOTIFY_USERNAME}" << EOF
+        {
+          "access_token": "placeholder",
+          "token_type": "Bearer",
+          "expires_in": 3600,
+          "refresh_token": "${SPOTIFY_REFRESH_TOKEN}",
+          "scope": "playlist-modify-public playlist-modify-private",
+          "expires_at": 0
+        }
+        EOF
     - name: Run KEXP catalog processing
       run: python processCatalog.py --config config.json
       
