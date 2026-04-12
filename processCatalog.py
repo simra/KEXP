@@ -221,6 +221,9 @@ def parseArgs():
         'Process KEXP playlist and upload to spotify')
     parser.add_argument('--config', type=str, default='config.json',
                         help='Config file in json format')
+    parser.add_argument('--archive-only', action='store_true',
+                        help='Only fetch KEXP data and save to cache; '
+                             'skip updating the Spotify playlist')
     return parser.parse_args()
 
 
@@ -231,7 +234,8 @@ def main():
 
     setEnvironment(config)
     catalog = collectFromKEXP(config)
-    updateSpotify(config, catalog)
+    if not args.archive_only:
+        updateSpotify(config, catalog)
 
 
 if __name__ == "__main__":
