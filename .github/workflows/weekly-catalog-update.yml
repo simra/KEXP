@@ -123,6 +123,11 @@ jobs:
     - name: Commit weekly keepalive timestamp
       if: success()
       run: |
+        if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+          echo "Tracked files changed during the workflow; skipping keepalive reset."
+          git status --porcelain --untracked-files=no
+          exit 1
+        fi
         git fetch origin "${{ github.ref_name }}"
         git reset --hard "origin/${{ github.ref_name }}"
         # Keep one successful-run commit per UTC day to avoid duplicate manual-run commits.
