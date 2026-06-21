@@ -123,7 +123,9 @@ jobs:
     - name: Commit weekly keepalive timestamp
       if: success()
       run: |
-        git pull --ff-only origin "${{ github.ref_name }}"
+        git fetch origin "${{ github.ref_name }}"
+        git merge --ff-only "origin/${{ github.ref_name }}"
+        # Keep one successful-run commit per UTC day to avoid duplicate manual-run commits.
         date -u +"%Y-%m-%d" > last-run.txt
         git config user.name "github-actions[bot]"
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
