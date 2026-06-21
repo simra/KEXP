@@ -6,6 +6,10 @@ on:
     - cron: '0 9 * * 0'
   workflow_dispatch: # Allow manual triggers
 
+concurrency:
+  group: weekly-catalog-update
+  cancel-in-progress: false
+
 jobs:
   update-catalog:
     runs-on: ubuntu-latest
@@ -16,6 +20,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
       
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -117,10 +123,13 @@ jobs:
     - name: Commit weekly keepalive timestamp
       if: success()
       run: |
+        git pull --ff-only origin "${GITHUB_REF_NAME}"
         date -u +"%Y-%m-%dT%H:%M:%SZ" > last-run.txt
         git config user.name "github-actions[bot]"
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git add last-run.txt
-        git diff --cached --quiet && exit 0
+        if git diff --cached --quiet; then
+          exit 0
+        fi
         git commit -m "chore: update weekly keepalive timestamp"
         git push
