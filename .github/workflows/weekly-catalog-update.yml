@@ -124,7 +124,7 @@ jobs:
       if: success()
       run: |
         git fetch origin "${{ github.ref_name }}"
-        git merge --ff-only "origin/${{ github.ref_name }}"
+        git reset --hard "origin/${{ github.ref_name }}"
         # Keep one successful-run commit per UTC day to avoid duplicate manual-run commits.
         date -u +"%Y-%m-%d" > last-run.txt
         git config user.name "github-actions[bot]"

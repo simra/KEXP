@@ -24,3 +24,7 @@ pip install spotipy
 ````
 
 I made some minor revisions to my spotipy installation to bring it up to date.  You may have to troubleshoot calls to the module to get things working.  Reach out to me if you get stuck.
+
+## GitHub Actions
+
+The weekly GitHub Actions workflow updates a tracked `last-run.txt` file after each successful scheduled run. That keepalive commit prevents GitHub from auto-disabling the schedule when the repository is otherwise inactive.
