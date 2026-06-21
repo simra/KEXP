@@ -79,6 +79,7 @@ The refresh token is required for headless authentication in GitHub Actions. You
 The workflow runs:
 - **Automatically**: Every Sunday at 9:00 AM UTC
 - **Manually**: You can trigger it manually from the Actions tab
+- **Keepalive update**: After a successful run, the workflow updates `last-run.txt` with the current UTC date and commits it back to the repository so GitHub does not disable the schedule after long periods without other repository activity.
 
 ## Manual Trigger
 

@@ -6,14 +6,22 @@ on:
     - cron: '0 9 * * 0'
   workflow_dispatch: # Allow manual triggers
 
+concurrency:
+  group: weekly-catalog-update
+  cancel-in-progress: false
+
 jobs:
   update-catalog:
     runs-on: ubuntu-latest
     environment: "weekly update"
+    permissions:
+      contents: write
     
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
       
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -111,3 +119,33 @@ jobs:
     - name: Clean up config file
       if: always()
       run: rm -f config.json
+
+    - name: Commit weekly keepalive timestamp
+      if: success()
+      run: |
+        if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+          echo "Tracked files changed during the workflow; aborting keepalive commit."
+          git status --porcelain --untracked-files=no
+          exit 1
+        fi
+        today="$(date -u +"%Y-%m-%d")"
+        if [ -f last-run.txt ] && [ "$(cat last-run.txt)" = "${today}" ]; then
+          echo "Keepalive file already updated for ${today} in this checkout."
+          exit 0
+        fi
+        echo "Syncing keepalive commit with the latest ${GITHUB_REF} state."
+        if ! git pull --rebase origin "${{ github.ref_name }}"; then
+          echo "Failed to rebase onto the latest branch tip before writing the keepalive commit."
+          git rebase --abort || true
+          exit 1
+        fi
+        # Skip a duplicate commit if another run already wrote today's date before this push.
+        printf '%s\n' "${today}" > last-run.txt
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        if git diff --quiet -- last-run.txt; then
+          exit 0
+        fi
+        git add last-run.txt
+        git commit -m "chore: update weekly keepalive timestamp"
+        git push
