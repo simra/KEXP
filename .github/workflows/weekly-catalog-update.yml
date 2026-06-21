@@ -128,13 +128,21 @@ jobs:
           git status --porcelain --untracked-files=no
           exit 1
         fi
+        today="$(date -u +"%Y-%m-%d")"
+        if [ -f last-run.txt ] && [ "$(cat last-run.txt)" = "${today}" ]; then
+          echo "Keepalive file already updated for ${today} in this checkout."
+          exit 0
+        fi
         echo "Syncing keepalive commit with the latest ${GITHUB_REF} state."
-        git pull --rebase origin "${{ github.ref_name }}"
-        # Keep one successful-run commit per UTC day to avoid duplicate manual-run commits.
-        date -u +"%Y-%m-%d" > last-run.txt
+        if ! git pull --rebase origin "${{ github.ref_name }}"; then
+          echo "Failed to rebase onto the latest branch tip before writing the keepalive commit."
+          git rebase --abort || true
+          exit 1
+        fi
+        # Skip a duplicate commit if another run already wrote today's date before this push.
+        printf '%s\n' "${today}" > last-run.txt
         git config user.name "github-actions[bot]"
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        # Skip a duplicate commit if another run already wrote today's date before this push.
         if git diff --quiet -- last-run.txt; then
           exit 0
         fi
