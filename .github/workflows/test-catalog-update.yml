@@ -1,7 +1,7 @@
 name: Test KEXP Catalog Update
 
 on:
-  workflow_dispatch: # Manual trigger only
+  workflow_dispatch: # Allow manual triggers
 
 concurrency:
   group: test-catalog-update
@@ -36,6 +36,8 @@ jobs:
         SPOTIPY_CLIENT_SECRET: ${{ secrets.SPOTIPY_CLIENT_SECRET }}
         SPOTIPY_REDIRECT_URI: ${{ vars.SPOTIPY_REDIRECT_URI }}
         SPOTIFY_USERNAME: ${{ vars.SPOTIFY_USERNAME }}
+        PLAYLIST_NAME: github_test
+        DAYS_TO_PARSE: 3
         TOP_N: ${{ vars.TOP_N }}
         PIVOT: ${{ vars.PIVOT }}
       run: |
@@ -47,8 +49,8 @@ jobs:
                 "SPOTIPY_REDIRECT_URI": "$SPOTIPY_REDIRECT_URI"
             },
             "spotify_username": "$SPOTIFY_USERNAME",
-            "playlist_name": "github_test",
-            "daysToParse": 3,
+            "playlist_name": "$PLAYLIST_NAME",
+            "daysToParse": ${DAYS_TO_PARSE:-14},
             "topN": ${TOP_N:-100},
             "pivot": "${PIVOT:-track}"
         }
@@ -108,3 +110,4 @@ jobs:
     - name: Clean up config file
       if: always()
       run: rm -f config.json
+
