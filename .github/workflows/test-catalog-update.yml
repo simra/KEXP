@@ -60,9 +60,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: cache/
-        key: kexp-api-cache-test-${{ github.run_id }}
+        key: test-kexp-api-cache-${{ github.run_id }}
         restore-keys: |
-          kexp-api-cache-test-
+          test-kexp-api-cache-
 
     - name: Pre-seed Spotify token cache
       env:
