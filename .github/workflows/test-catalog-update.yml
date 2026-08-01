@@ -57,11 +57,12 @@ jobs:
         EOF
         
     - name: Restore API cache
-      uses: actions/download-artifact@v4
+      uses: actions/cache@v4
       with:
-        name: kexp-api-cache
         path: cache/
-      continue-on-error: true # First run will not have an existing artifact
+        key: test-kexp-api-cache-${{ github.run_id }}
+        restore-keys: |
+          test-kexp-api-cache-
 
     - name: Pre-seed Spotify token cache
       env:
@@ -105,13 +106,6 @@ jobs:
                         pass
         print(f'Pruned {deleted} cache file(s) older than {retention_days} days')
         EOF
-
-    - name: Upload API cache
-      uses: actions/upload-artifact@v4
-      with:
-        name: kexp-api-cache
-        path: cache/
-        overwrite: true
 
     - name: Clean up config file
       if: always()
